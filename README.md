@@ -1,5 +1,5 @@
 # AI4D-Africa-s-Anglophone-Research-Lab-Tanzania-Tourism-Classification
-![image](https://zindi-public-release.s3.eu-west-2.amazonaws.com/uploads/competition/image/270/header_eb333e49-5eae-4747-bfd8-ea4ff5a98911.png"), url("https://zindi-public-release.s3.eu-west-2.amazonaws.com/uploads/competition/image/270/thumb_eb333e49-5eae-4747-bfd8-ea4ff5a98911.png)
+![image](https://zindi-public-release.s3.eu-west-2.amazonaws.com/uploads/competition/image/270/header_eb333e49-5eae-4747-bfd8-ea4ff5a98911.png")
 # Description
 This challenge is open to users from English speaking African countries.
 
@@ -12,7 +12,7 @@ Tanzania’s tourist attractions include the Serengeti plains, which hosts the l
 The objective of this hackathon is to develop a machine learning model that can classify the range of expenditures a tourist spends in Tanzania. The model can be used by different tour operators and the Tanzania Tourism Board to automatically help tourists across the world estimate their expenditure before visiting Tanzania.
 
 # AI4D AFRICA’S ANGLOPHONE MULTIDISCIPLINARY RESEARCH LAB (http://ai4dlab.or.tz/)
-![logo][/images/image.png]
+![logo](ai4d/images/image.png)
 
 The AI4D Africa’s Anglophone Multidisciplinary Research Lab is implemented under the collaboration of the University of Dodoma (UDOM) and Nelson Mandela African Institution of Science and Technology (NM-AIST). The lab is funded by an International Development Research Centre (IDRC) and Swedish International Development Cooperation Agency (Sida) through the AI4D Africa Program. The core functions of the lab include, to:
 
