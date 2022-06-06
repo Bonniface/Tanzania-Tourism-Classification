@@ -1,5 +1,6 @@
 # AI4D-Africa-s-Anglophone-Research-Lab-Tanzania-Tourism-Classification
 ![image](https://zindi-public-release.s3.eu-west-2.amazonaws.com/uploads/competition/image/270/header_eb333e49-5eae-4747-bfd8-ea4ff5a98911.png)
+
 # Description
 This challenge is open to users from English speaking African countries.
 
