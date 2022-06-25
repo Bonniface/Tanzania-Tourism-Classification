@@ -1,0 +1,131 @@
+---
+title: "Tanzania Tourism Classification"
+author: "Boniface Kalong"
+date: "6/9/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r ,message=FALSE}
+library(dplyr)
+
+train <- read.csv("Train.csv")
+test <- read.csv("Test.csv")
+```
+
+
+
+```{r}
+library(skimr)
+skimr::skim(train)
+```
+
+```{r}
+train[train==""]<- NA
+test[test==""]<- NA
+```
+
+
+```{r}
+library(visdat)
+visdat::vis_dat(train)
+```
+
+
+
+
+
+```{r}
+Train <- train%>%
+  mutate(total = train$total_female+train$total_male)
+Test <- test%>%
+  mutate(total = test$total_female+test$total_male)
+#x <- Train$travel_with
+#for (i in x) {
+#  if (is.na(x[i]) & Train$total == 1){
+#    return("Alone")
+#  }
+#}
+Test <- na.omit(Test)
+Train<- na.omit(Train)
+
+Train[!(Train$total ==0),]
+Test[!(Test$total ==0),]
+
+```
+```{r}
+
+cat_col_Train <- c( 'country', 'age_group', 'travel_with', 'purpose',
+       'main_activity', 'info_source', 'tour_arrangement',
+       'package_transport_int', 'package_accomodation', 'package_food',
+       'package_transport_tz', 'package_sightseeing', 'package_guided_tour',
+       'package_insurance', 'first_trip_tz', 'cost_category')
+cat_col_Test <- c( 'country', 'age_group', 'travel_with', 'purpose',
+       'main_activity', 'info_source', 'tour_arrangement',
+       'package_transport_int', 'package_accomodation', 'package_food',
+       'package_transport_tz', 'package_sightseeing', 'package_guided_tour',
+       'package_insurance', 'first_trip_tz')
+```
+
+
+```{r}
+library(CatEncoders)
+cat_data_Train <- Train[cat_col_Train]
+lenc <- sapply(Train[cat_col_Train],function(x) LabelEncoder.fit(x))
+            for (i in cat_col_Train){
+                 cat_data_Train[[i]] <- transform(lenc[[i]],Train[[i]])
+            }
+cat_data_Test <- Test[cat_col_Test]
+lenc <- sapply(Test[cat_col_Test],function(x) LabelEncoder.fit(x))
+            for (i in cat_col_Test){
+                 cat_data_Test[[i]] <- transform(lenc[[i]],Test[[i]])
+            }
+```
+
+
+```{r}
+
+df_Train <- cbind(cat_data_Train,Train[c('Tour_ID','total_female', 'total_male','night_mainland','night_zanzibar')])
+
+df_Test <- cbind(cat_data_Test,Test[c('Tour_ID','total_female', 'total_male','night_mainland','night_zanzibar')])
+
+```
+
+```{python}
+cat_data_Train = r.df_Train
+cat_data_Test = r.df_Test
+Cat_df = pd.concat([cat_data_Train,cat_data_Test])
+```
+
+Also the plot of proportions confirms that the target variable is slightly unbalanced.
+
+```{r}
+library(ggplot2)
+options(repr.plot.width=4, repr.plot.height=4)
+ggplot(py$Cat_df, aes(x=cost_category))+geom_bar(fill="blue",alpha=0.5)+theme_bw()+labs(title="Distribution of Cost Category")
+```
+
+Now we have to check if the is any correlation between variables as machine learning algorithms assume that the predictor variables are independent from each others.
+
+```{r}
+library(corrplot)
+df <- py$Cat_df
+df <- df%>%select(-Tour_ID)
+```
+As shown by this plot, many variables are highly correlated with each others. Many methods perform better if highly correlated attributes are removed. The Caret R package provides the find Correlation which will analyze a correlation matrix of your data’s attributes report on attributes that can be removed. Because of much correlation some machine learning models could fail.
+
+## Modelling Approach
+
+### Modelling
+
+
+
+
+
+
+
+

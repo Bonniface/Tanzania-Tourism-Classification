@@ -1,0 +1,269 @@
+---
+title: "Tanzania Tourism Classification"
+author: "Boniface Kalong"
+date: "6/9/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r, message=FALSE}
+library(reticulate)
+library(dplyr)
+
+train <- read.csv("Train.csv")
+test <- read.csv("Test.csv")
+
+
+library(visdat)
+train[train==""]<- NA
+test[test==""]<- NA
+
+
+visdat::vis_dat(train)
+```
+
+```{python}
+import pandas as pd
+
+Train = r.train
+Test = r.test
+# Founction
+def Clean(cols):
+    travel_with =cols[0]
+    total_female =cols[1]
+    total_male =cols[2]
+    if pd.isnull(travel_with):
+        
+        if total_female+total_male == 1:
+            return "Alone"
+        elif total_female+total_male <= 5:
+            return "With Spouse and Children"
+        elif total_female+total_male == 2:
+            return "With Spouse "
+        else:
+            return "With Other Friend/Relative"
+    else:
+        return travel_with
+
+
+Train['travel_with']=Train[['travel_with','total_female','total_male']].apply(Clean,axis=1)
+Test['travel_with']=Test[['travel_with','total_female','total_male']].apply(Clean,axis=1)
+    
+```
+
+
+```{r}
+Train <- py$Train%>%  mutate(total = train$total_female+train$total_male)
+Test <- py$Test%>% mutate(total = test$total_female+test$total_male)
+
+Test <- na.omit(Test)
+Train<- na.omit(Train)
+
+Train[!(Train$total ==0),]
+Test[!(Test$total ==0),]
+
+
+```
+
+```{python}
+import seaborn as sns
+plot_ = sns.countplot(x=r.Train.age_group.dropna(), color='blue')
+```
+
+
+
+```{r}
+
+cat_col_Train <- c( 'country', 'age_group', 'travel_with', 'purpose',
+       'main_activity', 'info_source', 'tour_arrangement',
+       'package_transport_int', 'package_accomodation', 'package_food',
+       'package_transport_tz', 'package_sightseeing', 'package_guided_tour',
+       'package_insurance', 'first_trip_tz', 'cost_category')
+cat_col_Test <- c( 'country', 'age_group', 'travel_with', 'purpose',
+       'main_activity', 'info_source', 'tour_arrangement',
+       'package_transport_int', 'package_accomodation', 'package_food',
+       'package_transport_tz', 'package_sightseeing', 'package_guided_tour',
+       'package_insurance', 'first_trip_tz')
+```
+
+
+```{r}
+library(CatEncoders)
+cat_data_Train <- Train[cat_col_Train]
+lenc <- sapply(Train[cat_col_Train],function(x) LabelEncoder.fit(x))
+            for (i in cat_col_Train){
+                 cat_data_Train[[i]] <- transform(lenc[[i]],Train[[i]])
+            }
+cat_data_Test <- Test[cat_col_Test]
+lenc <- sapply(Test[cat_col_Test],function(x) LabelEncoder.fit(x))
+            for (i in cat_col_Test){
+                 cat_data_Test[[i]] <- transform(lenc[[i]],Test[[i]])
+            }
+```
+
+
+```{r}
+
+df_Train <- cbind(cat_data_Train,Train[c('Tour_ID','total_female', 'total_male','night_mainland','night_zanzibar')])
+
+df_Test <- cbind(cat_data_Test,Test[c('Tour_ID','total_female', 'total_male','night_mainland','night_zanzibar')])
+str(df_Train)
+```
+
+Also the plot of proportions confirms that the target variable is slightly unbalanced.
+
+```{r}
+library(ggplot2)
+options(repr.plot.width=4, repr.plot.height=4)
+ggplot(df_Train, aes(x=cost_category))+geom_bar(fill="blue",alpha=0.5)+theme_bw()+labs(title="Distribution of Cost Category")
+```
+Now we have to check if the is any correlation between variables as machine learning algorithms assume that the predictor variables are independent from each others.
+```{r}
+Cor_Train <- df_Train%>%select(-Tour_ID)
+correlationMatrix <- cor(Cor_Train)
+options(repr.plot.width=4, repr.plot.height=4)
+corrplot(correlationMatrix, order = "hclust", tl.cex = 1, addrect = 8)
+
+#######################################################################
+Cor_Test <- df_Test%>%select(-Tour_ID)
+correlation <- cor(Cor_Test)
+options(repr.plot.width=4, repr.plot.height=4)
+corrplot(correlation, order = "hclust", tl.cex = 1, addrect = 8)
+```
+
+
+
+
+Now we have to check if the is any correlation between variables as machine learning algorithms assume that the predictor variables are independent from each others.
+```{r}
+library(corrplot)
+library(ggfortify)
+library(corpcor)
+# find attributes that are highly corrected (ideally >0.90)
+############################## Train#######################
+highlyCorrelated <- findCorrelation(correlationMatrix, cutoff=0.9)
+# print indexes of highly correlated attributes
+print(highlyCorrelated)
+
+
+################################# Test###################
+Correlated <- findCorrelation(correlation, cutoff=0.9)
+# print indexes of highly correlated attributes
+print(Correlated)
+```
+
+
+Selecting the right features in our data can mean the difference between mediocre performance with long training times and great performance with short training times.
+```{r}
+# Remove correlated variables
+################################# Train ###############################
+Traindata <- Cor_Train %>%select(-highlyCorrelated)
+# number of columns after removing correlated variables
+ncol(Traindata)
+################################# Test ################################
+Testdata <- Cor_Test %>%select(-Correlated)
+# number of columns after removing correlated variables
+ncol(Traindata)
+```
+
+
+```{r}
+yTest <- Test%>%select(total)
+```
+
+
+
+```{python}
+
+# GETTING Correllation matrix
+corr_mat=r.Traindata.corr(method='pearson')
+plt.figure(figsize=(20,10))
+sns.heatmap(corr_mat,vmax=1,square=True,annot=True,cmap='cubehelix')
+```
+
+
+```{python}
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler() 
+
+scaler.fit(r.Traindata)
+
+X_Train = scaler.transform(r.Traindata) 
+# apply same transformation to test data
+
+
+
+import matplotlib.pyplot as plt
+
+from sklearn.decomposition import PCA
+pca = PCA().fit(X_Train)
+plt.plot(np.cumsum(pca.explained_variance_ratio_))
+plt.xlim(0,7,1)
+plt.xlabel('Number of components')
+plt.ylabel('Cumulative explained variance')
+```
+
+
+
+
+
+
+```{python}
+from sklearn.linear_model import LogisticRegression, SGDClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn import svm
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split, KFold, GridSearchCV
+from sklearn.metrics import precision_score,recall_score
+from sklearn.metrics import f1_score
+import xgboost as xgb
+from sklearn.neural_network import MLPClassifier
+#from lightgbm import LGBMClassifier
+
+'''
+    Select the best model for the given dataset
+    :param X: features
+    :param Y: labels
+    :return: the name and the accuracy of the model for the given dataset
+    '''
+  
+    
+XTrain = r.Traindata
+yTrain =  r.Traindata['cost_category']
+XTest  =  r.Testdata
+yTest  =  r.yTest
+
+models = [RandomForestClassifier(), KNeighborsClassifier(), SVC(), LogisticRegression(),xgb.XGBClassifier(),GaussianNB(),
+              SGDClassifier(), DecisionTreeClassifier(),MLPClassifier()]
+scores = dict()
+
+for model in models:
+    model.fit(X_Train,yTrain)
+    predictions = model.predict(XTest)
+    print(f'model: {str(model)}')
+    print(f'Accuracy_score: {accuracy_score(yTest,predictions)}')
+    
+#model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=1)
+#model.fit(XTrain,yTrain)
+#predictions = model.predict(XTest)
+#predictions
+```
+
+
+
+
+
+
